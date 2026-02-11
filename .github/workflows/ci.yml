@@ -1,0 +1,41 @@
+name: Homelab CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils shellcheck python3
+
+      - name: Lint Wazuh XML rules
+        run: |
+          if ls wazuh/rules/*.xml >/dev/null 2>&1; then
+            for f in wazuh/rules/*.xml; do
+              echo "Linting $f"
+              xmllint --noout "$f"
+            done
+          fi
+
+      - name: Lint shell scripts
+        run: |
+          if ls automation/*.sh >/dev/null 2>&1; then
+            shellcheck automation/*.sh
+          fi
+
+      - name: Check Python scripts compile
+        run: |
+          if ls automation/*.py >/dev/null 2>&1; then
+            python3 -m compileall automation
+          fi
